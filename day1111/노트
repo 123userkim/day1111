@@ -1,0 +1,446 @@
+1)모든 도서의 수 출력
+	select count(*) from book;
+2)굿스포츠에서 출간하는 도서의 수 출력
+	select count(*)from book where publisher = '굿스포츠';
+3)출판사별로 출간하여 도서의 수 출력
+	select count(*) from book group by publisher;
+	select publisher, count(*) from book group by publisher;
+	//grup by 컬럼에 나타나는 것만 select에 쓸 수 있음
+	select publisher, bookname, count(*) from book group by publisher;(x)
+	
+*집계함수 sum,avg,max,min,count, ->집계함수의 결과는 1건
+ 
+*group by와 함께 집계함수 사용 group by절에 사용한 컬럼의 값의 종류만큼 결과가 나옴
+ 
+ select count(*) from book; ->결과 1건
+ select count(*) from group by publisher;
+ ->결과가 publisher종류만큼, 이렇게만 하면 어느 출판사의 도서의 수 인지 알 수가 없음
+ ->왼쪽에 출판사 이름 적는 게 좋음
+ =>select publisher, count(*) from book group by publisher;
+ 
+ 
+ *집계함수를 사용할 때엔 group by 절에 표현한 컬럼만이 select절에 올 수 있음,
+ 그 이외의 컬럼은 x 
+ 
+ 1)고객번호 별로 구매한 도서의 수 출력
+ select custid, count(*) from orders group by custid;
+
+ 2)도서번호별로 판매한 도서의 수를 출력
+ select bookid, count(*)from orders group by bookid;
+
+ 3)출판사별로 도서의 평균가격, 최고가격, 최저가격을 출력
+ select publisher, avg(price),max(price),min(price) 
+ from book 
+ group by publisher;
+ 
+ 4)고객번호 별로 평균구매가격, 구매한 도서의 최고가격을 출력 
+ select custid, avg(saleprice), max(saleprice) 
+ from orders 
+ group by custid;
+ 
+ 5)날짜별로 판매한 도서의수, 판매금액을 출력
+ select orderdate, 
+ count(*), 
+ sum(saleprice) 
+ from orders 
+ group by orderdate;
+ 
+ <join 집계함수 group by>
+ 
+ 1)고객이름별로 구매한 도서의 수
+ select name, count(*) 
+ from customer c, orders o
+ where c.custid= o.custid
+ group by name; 
+ 
+ 2)도서이름별로 판매한 수 출력
+ select bookname, count(*)
+ from book b, orders o
+ where b.bookid= o.bookid
+ group by bookname;
+  
+ 3)출판사별로 판매한 도서의 수, 총판매금액 출력
+ select publisher, count(*),sum(saleprice)
+ from book b, orders o
+ where b.bookid = o.bookid
+ group by publisher;
+ 
+ 4)고객이름별로 총구매금액, 평균구매금액, 구매한 도서의 수 출력 단 총구매금액이 높은순으로 출력, 도서의수
+ select name, sum(saleprice), avg(saleprice), count(*)
+ from customer c, orders o 
+ where c.custid = o.custid
+ group by name
+ order by sum(saleprice) desc, count(*) desc;
+ 
+ **having -> group by 절에 의해 나타난 결과에 대해서 조건식을 부여하는 것
+ select 컬럼, 집계함수, ..
+ from 테이블
+ where 조건식
+ group by 칼럼
+ having 조건식
+ 
+ 1) 가격이 8천원 이상인 도서를 구매한 고객의 대해서 고객별 주문도서의 총 수량을 출력
+ select name, count(*)
+ from customer c , orders o, book b
+ where c.custid = o.custid and
+ b.bookid= o.bookid and
+ price >=8000 
+ group by name
+ having count(*)>=2;
+ 
+ insert into customer values(6,'윤석열','대한민국 서울', 010-9000-0000);
+ insert into customer values(7,'이재명','대한민국 경기', 010-9000-0001);
+ 
+ insert into orders values(11,6,8,14000,sysdate);
+ insert into orders values(12,7,12,20000,sysdate);
+ 
+ 1)출판사별로, 
+ 
+ select publisher , count(*),sum(saleprice)
+ from orders o, book b
+ where b.bookid= o.bookid and 
+ orderdate between '2021/11/01' and '2021/11/07' and
+ bookname like '_구%'
+ group by publisher
+ having sum(saleprice) >=10000
+ order by sum(saleprice) desc;
+ 
+ 2)도서별로 총판매량, 총판매금액을 출력
+ 단 총판매량이 2권이상인 도서만 출력
+ 총판매수량이 높은 순, 총판매금액
+ 
+ select bookname, count(*),sum(saleprice)
+ from book b, orders o
+ where b.bookid= o.bookid
+ group by bookname
+ having count(*) >= 2
+ order by count(*) desc,sum (saleprice) desc;
+
+ 3) 이상미디어나 대한 미디어 굿스포츠에서 판매하는 도서별로 총판매수량을 출력
+ 단총판매수량이 2권이상인 도서만 출력
+ 총판매수량이 높은 순, 도서명순
+ 
+ select bookname, count(*)
+ from book b, orders o
+ where publisher in('이상미디어','대한미디어','굿스포츠') and
+ b.bookid= o.bookid
+ group by bookname
+ having count(*) >= 2
+ order by count(*) desc, bookname;
+ 
+ 4)서교동에 근무하는 직원들의 직급별 사원의 수, 평균급여를 출력하기
+ select job, count(*),avg(salary)
+ from emp e, dept d
+ where e.dno= d.dno and dloc = '서교동' 
+ group by job;
+ 
+ 5)개발팀에 근무하는 직원들의 부서별 사원의 수, 평균 급여, 총급여, 최고급여, 최저금여를 출력
+ 단, 사원의 수가 2명이상인 부서를 출력하고
+ 사워의 수가 높은 순
+ select dname,count(*),avg(salary),sum(salary),max(salary),min(salary)
+ from emp e, dept d
+ where e.dno= d.dno and
+ dname like '개발%'
+ group by dname
+ having count(*)>=2
+ order by count(*) desc;
+ 
+ insert into emp values(1014,'윤석열',20,null,null, sysdate,'010-9080-9088','서울',1005,'사원');
+ 
+ count(*) 모든 레코드의 수를 알려줌
+ count(컬럼이름) 컬럼의 값이 null이 아닌 레코드의 수
+ 
+ select avg(salary) from emp;   -> sal의 null이 아닌 개수 
+
+select ename, salary from emp; 
+ 
+ 
+ **null인 경우에 특정한 값으로 변환 후 출력 -> nvl(컬럼이름, 값)
+ 
+모든 사원의 이름과 급여를 출력
+단 그벼가 null이면 0으로 출력
+select ename, nvl(salary,0) from emp;  
+ 
+전체 레코드 개수를 나눠야 한다면?
+select avg(nvl(sarlary,0))from emp;
+=
+select sum(salary)/count(*) from emp;
+ 
+ 
+ 모든 직원들의 사원번호, 이름 , 관리자번호
+ select eno, ename, mrg from emg;
+ 
+ **self join**
+ 동일한 테이블에서 어떤 칼럼의 자신의 다른 컬럼을 참조하는 경우에 
+ 
+ emp 테이블의 경우 
+ 관리번호인 mgr은 emp테이블의 eno를 참조
+ 
+ 만약 사원이름과 관리자 이름을 출력하려면 self를 이용
+ 
+ self 조인을 하는 방법은 실제로 물리적으로 테이블이 하나만 있기 땜에 애칭 붕
+ select 
+ from table 애칭1, 애칭 2
+ where
+ 
+ 1)모든 직원의 이름과 그 직원의 관리자를 출력
+ select e.ename, m.ename
+ from emp e, emp m
+ where e.mgr = m.eno;
+ 
+ 2)임상진의 관리자이름을 출력
+ select m.ename
+ from emp e, emp m
+ where e.mgr = m.eno and
+ e.ename ='임상진';
+ 
+ 3)김시아의 부하직원들의 이름,급여, 입사일을 출력하기 단 입사일이 가장 최근의 순서대로 
+ select e.ename, e.salary, e.hirdate
+ from emp m, emp e
+ where e.mgr = m.eno and
+ m.ename ='김시아'
+ order by e.hirdate desc;
+ 
+ 4) 서교동에 근무하는 직원들의
+ 사원번호, 사원명, 부서번호, 부서명, 관리자명, 급여 
+ 단 급여가 높은 순, 사원명 순
+ 
+ select e.eno, e.ename, d.dno, d.dname, m.ename, e.salary
+ from emp e, emp m, dept d
+ where e.mgr = m.eno and
+ e.dno = d.dno and
+ d.dloc = '서교동' 
+ order by e.salary desc, e.ename;
+  
+  
+ 5) 입사일이 관리자의 입사일보다 빠른 직원들의
+ 사원번호, 사원명, 관리자명, 입사일, 관리자의 입사일,부서번호, 부서명
+ 부서명으로 출력 동일시 사원명순
+ 
+ select e.eno, e.ename, m.ename,e.hirdate, m.hirdate, d.dno, d.dname
+ from emp e, emp m, dept d
+ where e.mgr = m.eno and
+ e.dno = d.dno and
+ m.hirdate>e.hirdate
+ order by d.dname, e.ename;
+ 
+ 6)서교동에 근무하는 관리자별 
+ 부하직원들의 수, 부하직원들의 총급여, 평균급여 출력
+ 
+ select m.ename, count(*), sum(e.salary), avg(e.salary)
+ from emp e, emp m , dept d
+ where e.mgr = m.eno and
+ e.dno = d.dno and
+ dloc = '서교동'
+ group by m.ename; 
+ 
+ 7)서교동에 근무하거나 판교에 근무하는 관리자별 부하직워들의 수, 부하직원들의 총급여, 평균급여
+ 단 부하지구언의 수가 2명이상인 관리자만
+ 
+ select m.ename, count(*), sum(e.salary), avg(e.salary)
+ from emp e, emp m , dept d
+ where e.mgr = m.eno and
+ e.dno = d.dno and
+ dloc in('서교동', '판교')
+ group by m.ename
+ having count(*)>=2;
+ 
+ 1)모든 고객의 이름과 고객이 구매한 금액을 출력하기
+ 
+ select name, saleprice
+ from customer c, orders o
+ where c.custid= o.custid
+ order by name;
+ 
+ 
+ outer join
+ 	left outer join 	왼쪽에 있는 테이블은 조건을 만족하지 않더라도 출력
+ 	right outer join	오른쪽에 있는 테이블은 조건을 만족하지 않더라도 출력
+
+	select ~~
+	from table left outer join table2
+	on 조건식
+
+1)고객명과 고객의 주문한 주문금액을 모두 출력하기
+단 구매를 하지 않은 모든 고객의 이름도 출력
+
+select name, saleprice
+from customer left outer join orders
+on customer.custid = orders.custid;
+
+
+select name, nvl(saleprice,0)
+from customer left outer join orders
+on customer.custid = orders.custid;
+
+2) 대한민국에 거주하는 고객에 대하여 고객별로 총구매수량과, 총구매금액, 평균구매금액을 출력
+총구매 수량이 높은 순, 총구매금액이 높은 순
+
+select name, count(saleprice),nvl(sum(saleprice),0),nvl(avg(saleprice),0)
+from customer left outer join orders
+on customer.custid = orders.custid and
+address like '대한%'
+group by name
+order by count(*)desc,sum(saleprice)desc;
+
+NAME       COUNT(SALEPRICE) NVL(SUM(SALEPRICE),0) NVL(AVG(SALEPRICE),0)
+---------- ---------------- --------------------- ---------------------
+장미란                    3                 31000            10333.3333
+김연아                    2                 15000                  7500
+박세리                    0                     0                     0
+박지성                    0                     0                     0
+추신수                    0                     0                     0
+이재명                    1                 20000                 20000
+윤석열                    1                 14000                 14000
+
+대한민국에 거주 하지 않는자도 나옴
+->서브쿼리 : sql를 만들어서 그것을 sql에 포함시킴
+->sql문에 포함되는 또다른 sql
+->select, from, where 절에 모두 올 수 있음
+
+
+select name, count(saleprice),nvl(sum(saleprice),0),nvl(avg(saleprice),0)
+from orders 
+right outer join 
+( select custid, name from customer where address like '대한민국%'  )customer
+on customer.custid = orders.custid 
+group by name
+order by count(saleprice)desc, nvl(sum(saleprice),0)desc;
+
+
+3)모든 직원들에 대해서 직원의 이름, 관리자의 이름 출력 단 관리자가 없는 직원이름도 출력
+select e.ename, nvl(m.ename,'관리자없음')
+from emp e left outer join emp m
+on e.mgr= m.eno;
+
+4)도서이름별로 총 판매수량을 출력 단 판매이력이 없는 도서명도 출력
+
+select bookname,count(orderid)
+from book b left join orders o
+on  b.bookid = o.bookid 
+group by bookname
+order by count(orderid)desc;
+
+5)부서별로 근무자의 수, 평균급여를 출력
+
+select dname,count(ename),nvl(avg(salary),0)
+from dept d left join emp e
+on d.dno = e.dno
+group by dname;
+
+
+select dname,count(ename),nvl(avg(salary),0)
+from dept d, emp e
+where d.dno = e.dno(+)
+group by dname;
+
+6)가장 비싼 도서의 금액 출력
+select max(price)
+from book;
+
+7)가장 비싼 도서의 이름
+select bookname 
+from book
+where price =50000;
+
+select bookname
+from book
+where price = (select max(price) from book);
+
+**서브쿼리(하위질의)
+->sql문장안에 포함되는 또다른 sql문을 말함
+->select,from,where절에 올 수 있음
+->update 할 때 
+	set 컬럼명 = (서브쿼리)
+	where 컬럼명 =(서브쿼리)
+ delete
+  	where 절
+  	
+ insert into orders values(13,1,13,49000,sysdate);
+ insert into orders values(14,6,13,50000,sysdate);
+
+ 
+ 1) 가장 비싼 책을 구매한 고객의 이름 출력
+ -가장 비싼 도서의 금액
+ -가장 비싼 도서의 금액에 해당하는 도서번호
+ - 도서번호에 해당하는 도서를 구매한 고객번호
+ - 고객번호의 고객이름
+ 
+ select max(price) from book;=>건수가 한 건
+ 
+ -가장 비싼 도서의 금액에 해당하는 도서번호
+ select bookid from book where price = (select max(price) from book);
+ 
+ 도서번호에 해당하는 도서를 구매한 고객번호
+ select custid from orders 
+ 	where bookid = ( select bookid from book 
+ 		where price = (select max(price) from book));
+ 
+ ==>여러건
+ 
+ 고객번호의 고객이름
+ select name from customer where custid =(select custid from orders 
+ 	where bookid = ( select bookid from book 
+ 		where price = (select max(price) from book)));
+ 
+ 1행에 오류:
+ORA-01427: 단일 행 하위 질의에 2개 이상의 행이 리턴되었습니다.
+
+ select name from customer where custid in(select custid from orders 
+ 	where bookid = ( select bookid from book 
+ 		where price = (select max(price) from book)));
+ 		
+ 		
+
+ 
+ 2)평균급여보다 더 높은 급여를 받는 직원들의 
+ 사원번호, 이름, 관리자이름, 부서명
+ 
+ -평균급여
+ select avg(salary)from emp;
+ 
+ select e.eno, e.ename, m.ename, dname
+ from emp e, emp m, dept d
+ where e.mgr = m.eno and
+ e.dno= d.dno and
+ e.salary>(select avg(salary) from emp);
+ 
+ 
+ 3)박지성이 구매한 적이 있는 도서를 구매한 고객의 이름
+	-박지성의 고객번호
+	select custid from customer where name  ='박지성';
+	
+	-박지성이 구매한 도서번호 알아내기
+	select bookid from orders 
+	where custid=(select custid from customer where name  ='박지성');
+	
+	-그 도서를 구매한 고객 번호
+	select distinct custid from orders
+		where bookid in (select bookid from orders 
+		where custid=(select custid from customer where name  ='박지성'));
+	-고객이름 출력
+	select name from customer 
+	where custid in(select distinct custid from orders
+		where bookid in (select bookid from orders 
+		where custid=(select custid from customer where name  ='박지성')))
+		and name<>'박지성';
+
+ 4)박지성이 구매하지 않은 도서의 이름
+  -박지성이 구매한 도서번호
+  
+  select bookid from orders 
+  where custid = (select custid from customer where name ='박지성');
+ ==>A
+ 
+  -book테이블로부터 bookid가  A에 해당하지 않은 도서이름을 출력
+ 
+  select bookname from book 
+  where bookid not in(select bookid from orders 
+  where custid = (select custid from customer where name ='박지성'));
+ 
+ ----
+ 고객이름을 입력받아서 그 고객이 주문하지 않는 도서명을 출력하기
+ String sql = select bookname from book 
+  where bookid not in(select bookid from orders 
+  where custid = (select custid from customer where name = ?));
+ 
